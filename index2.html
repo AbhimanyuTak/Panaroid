@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<title>three.js css3d - panorama</title>
+		<style>
+			body {
+				background-color: #000000;
+				margin: 0;
+				cursor: move;
+				overflow: hidden;
+			}
+
+			a {
+				color: #ffffff;
+			}
+
+			#info {
+				color:#fff;
+
+				top: 0px;
+
+				position: absolute;
+				padding: 5px;
+				width: 500px;
+				z-index: 5;
+
+				left: 50px;
+
+			}
+		</style>
+	</head>
+	<body>
+		<div id="container"></div>
+		<script src="js/three.min.js"></script>
+		<script src="js/CSS3DRender.js"></script>
+		<script src="js/TrackballControls.js"></script>
+		<script src="js/Projector.js"></script>
+		<script type='text/javascript' src='js/dat.gui.min.js'></script>
+		<script src="js/Detector.js"></script>
+
+		<div id="info">
+
+			<a>Use your mouse and Left Click to Pan and Scroll to Zoom</a>
+
+		</div>
+
+
+		<script>
+			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
+
+			var container, stats;
+			var camera, controls, scene, renderer;
+			var geometry, material, mesh;
+			var target = new THREE.Vector3();
+			var projector = new THREE.Raycaster();
+			var effectController;
+
+			init();
+			animate();
+
+			function init() {
+
+				camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 2000 );
+				camera.position.z = 10;
+
+				controls = new THREE.TrackballControls( camera );
+
+				controls.rotateSpeed = 0.0;
+				controls.zoomSpeed = 10.0;
+				controls.panSpeed = 50.0;
+
+				controls.noZoom = false;
+				controls.noPan = false;
+
+				controls.staticMoving = true;
+				controls.dynamicDampingFactor = 0.3;
+
+				controls.keys = [ 65, 83, 68 ];
+
+				controls.addEventListener( 'change', render );
+
+				scene = new THREE.Scene();
+
+				var images = [
+					{
+						url: 'img/1.jpg',
+						position: [ 0, 0, -512 ],
+						rotation: [ 0, 0, 0 ]
+					}
+				];
+
+				for ( var i = 0; i < images.length; i ++ ) {
+
+					var side = images[ i ];
+
+					var element = document.createElement( 'img' );
+					//element.width = 2048;
+					element.src = side.url;
+
+					var object = new THREE.CSS3DObject( element );
+					object.position.fromArray( side.position );
+					object.rotation.fromArray( side.rotation );
+					scene.add( object );
+
+				}
+
+				renderer = new THREE.CSS3DRenderer();
+				//renderer = new THREE.WebGLRenderer( { antialias: false } );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+				container = document.getElementById( 'container' );
+				container.appendChild( renderer.domElement );
+
+				// Adding Controls GUI
+				//ToDo: Not working properly, getting some offset values
+				effectController  = {
+
+					moveLeftRight : 0,
+					moveUpDown : 0,
+					zoom : 1,
+
+				};
+
+				var gui = new dat.GUI();
+
+				// gui.add( effectController, "moveLeftRight", -100, 100, 1 ).onChange( function(){
+				// 	camera.position.x = effectController.moveLeftRight;
+				// 	camera.updateProjectionMatrix ();
+					
+				// });
+				// gui.add( effectController, "moveUpDown", -100, 100, 1).onChange( function(){
+				// 	camera.position.y = effectController.moveUpDown;
+				// 	camera.updateProjectionMatrix ();
+					
+				// });
+				gui.add( effectController, "zoom", 1, 100, 10).onChange( function(){
+					camera.fov *= effectController.zoom;
+					camera.updateProjectionMatrix ();
+					
+				});
+
+				document.addEventListener( 'mousedown', onDocumentMouseDown, false )
+				window.addEventListener( 'resize', onWindowResize, false );
+
+				render();
+
+			}
+
+			function onDocumentMouseDown( event ) {
+
+			    event.preventDefault();
+
+			    var mouse = new THREE.Vector2();
+				mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+				mouse.y = -(event.clientY / window.innerHeight) * 2 + 1; 
+
+			    var raycaster = new THREE.Raycaster();
+				raycaster.setFromCamera(mouse, camera);
+				var intersects = raycaster.intersectObjects(scene.children);
+			    //render();
+    		}
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();	
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				controls.handleResize();
+
+				render();
+
+			}
+
+			function animate() {
+
+				requestAnimationFrame( animate );
+				controls.update();
+			}
+
+			function render() {
+
+				renderer.render( scene, camera );
+			}
+
+		</script>
+	</body>
+</html>
